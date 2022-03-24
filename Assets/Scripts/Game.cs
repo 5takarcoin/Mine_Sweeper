@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Game : MonoBehaviour
 {
@@ -7,11 +8,14 @@ public class Game : MonoBehaviour
 
     public int mineCounts = 32;
 
+    public Text text;
+
     private Board board;
 
     private Cell[,] state;
 
     private bool gameOver;
+    private int count;
 
     private void OnValidate()
     {
@@ -35,6 +39,8 @@ public class Game : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.R)) NewGame();
         else if (!gameOver)
         {
+            text.text = count.ToString();
+
             if (Input.GetKeyDown(KeyCode.Mouse1)) Flag();
             if (Input.GetKeyDown(KeyCode.Mouse0)) Reveal();
         }
@@ -43,6 +49,7 @@ public class Game : MonoBehaviour
     public void NewGame()
     {
         gameOver = false;
+        count = mineCounts;
 
         state = new Cell[width, height];
 
@@ -122,20 +129,25 @@ public class Game : MonoBehaviour
 
     private void Flag()
     {
-        Vector3 worldPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        Vector3Int cellPosition = board.tilemap.WorldToCell(worldPosition);
-
-        //Debug.Log(cellPosition);
-
-        int x = cellPosition.x;
-        int y = cellPosition.y;
-
-        if (x >= 0 && x < width && y >=0 && y < height && !state[x, y].revealed)
+        if(count > 0)
         {
-            Cell cell = state[x, y];
-            cell.flagged = !cell.flagged;
-            state[x, y] = cell;
-            board.Draw(state);
+            Vector3 worldPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            Vector3Int cellPosition = board.tilemap.WorldToCell(worldPosition);
+
+            //Debug.Log(cellPosition);
+
+            int x = cellPosition.x;
+            int y = cellPosition.y;
+
+            if (x >= 0 && x < width && y >= 0 && y < height && !state[x, y].revealed)
+            {
+                Cell cell = state[x, y];
+                if (cell.flagged) count++;
+                else count--;
+                cell.flagged = !cell.flagged;
+                state[x, y] = cell;
+                board.Draw(state);
+            }
         }
     }
 
@@ -186,6 +198,7 @@ public class Game : MonoBehaviour
 
         if (cell.type == Cell.Type.Empty)
         {
+            if (cell.flagged) count++;
             for (int i = -1; i <= 1; i++)
             {
                 for (int j = -1; j <= 1; j++)
@@ -201,6 +214,7 @@ public class Game : MonoBehaviour
     private void Explode(Cell cell)
     {
         gameOver = true;
+        text.text = "Sad!";
 
         cell.revealed = true;
         cell.exploded = true;
@@ -226,6 +240,7 @@ public class Game : MonoBehaviour
             }
         }
 
+        text.text = "Win!";
         gameOver = true;
 
         for (int i = 0; i < width; i++)
